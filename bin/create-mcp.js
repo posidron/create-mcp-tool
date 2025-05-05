@@ -76,66 +76,50 @@ program
       },
     ]);
 
+    let templateResult = { templateName: "" };
+
     try {
       if (isGitHubRepo) {
         // Handle GitHub repository template
-        await handleGitHubTemplate(options.template, projectDir, {
-          projectName,
-          description,
-          authorName,
-        });
+        templateResult = await handleGitHubTemplate(
+          options.template,
+          projectDir,
+          {
+            projectName,
+            description,
+            authorName,
+          }
+        );
       } else if (isCustomPath) {
         // Handle custom local template
-        await handleCustomTemplate(options.template, projectDir, {
-          projectName,
-          description,
-          authorName,
-        });
+        templateResult = await handleCustomTemplate(
+          options.template,
+          projectDir,
+          {
+            projectName,
+            description,
+            authorName,
+          }
+        );
       } else {
         // Handle built-in template with optional customization
-        const templateName = options.template;
-        const templateDir = path.resolve(
-          __dirname,
-          "..",
-          "templates",
-          templateName
+        templateResult = await handleBuiltInTemplate(
+          options.template,
+          projectDir,
+          {
+            projectName,
+            description,
+            authorName,
+            options,
+          }
         );
-
-        if (!fs.existsSync(templateDir)) {
-          console.error(
-            chalk.red(`Built-in template "${templateName}" does not exist.`)
-          );
-          process.exit(1);
-        }
-
-        // Copy template files to project directory
-        fs.copySync(templateDir, projectDir);
-
-        // Copy assets directory if it exists
-        copyPromptsIfExist(projectDir);
-
-        // Customize template if requested
-        if (options.customize) {
-          await customizeTemplate(projectDir, {
-            projectName,
-            description,
-            authorName,
-          });
-        } else {
-          // Just update basic metadata without customizing
-          updateProjectMetadata(projectDir, {
-            projectName,
-            description,
-            authorName,
-          });
-        }
       }
 
       // Install dependencies if requested
       if (options.install) {
         console.log(chalk.blue("\nInstalling dependencies..."));
         process.chdir(projectDir);
-        execSync("npm install", { stdio: "inherit" });
+        execSync("npm install --no-fund", { stdio: "inherit" });
       }
 
       console.log(chalk.green("\n✅ MCP project created successfully!"));
@@ -147,62 +131,26 @@ program
       console.log("  npm run build");
       console.log("  npm start");
 
-      console.log(chalk.blue("\nConfiguration Instructions:"));
-
-      // Claude Desktop
-      console.log(chalk.yellow("\n1. For Claude Desktop:"));
-      console.log(
-        `   Edit config: $HOME/Library/Application\\ Support/Claude/claude_desktop_config.json`
-      );
-      console.log("   Add to mcpServers:");
-      console.log(`   {
-     "mcpServers": {
-       "${projectName}": {
-         "command": "node",
-         "args": [
-           "${path.resolve(projectDir, "dist/index.js")}"
-         ]
-       }
-     }
-   }`);
-
-      // VS Code
-      console.log(chalk.yellow("\n2. For VS Code:"));
-      console.log(
-        `   Edit config: $HOME/Library/Application\\ Support/Code/User/settings.json`
-      );
-      console.log("   Add to settings:");
-      console.log(`   "mcp": {
-     "servers": {
-       "${projectName}": {
-         "type": "stdio",
-         "command": "node",
-         "args": [
-           "${path.resolve(projectDir, "dist/index.js")}"
-         ]
-       }
-     }
-   }`);
-
-      // Cursor
-      console.log(chalk.yellow("\n3. For Cursor IDE:"));
-      console.log(`   Edit config: $HOME/.cursor/mcp.json`);
-      console.log("   Add to mcpServers (same format as Claude Desktop):");
-      console.log(`   {
-     "mcpServers": {
-       "${projectName}": {
-         "command": "node",
-         "args": [
-           "${path.resolve(projectDir, "dist/index.js")}"
-         ]
-       }
-     }
-   }`);
+      // Print template-specific configuration instructions
+      printConfigInstructions(projectName, projectDir, templateResult);
     } catch (error) {
       console.error(chalk.red(`\nError creating project: ${error.message}`));
       process.exit(1);
     }
   });
+
+/**
+ * Determine the appropriate transport type based on config instructions or template name
+ */
+function determineTransportType(configInstructions, templateName) {
+  // First check if we have transport type in config instructions
+  if (configInstructions && configInstructions.transportType) {
+    return configInstructions.transportType;
+  }
+
+  // Otherwise fall back to template name-based detection
+  return templateName.includes("http") ? "http" : "stdio";
+}
 
 /**
  * Handle GitHub repository template
@@ -215,6 +163,9 @@ async function handleGitHubTemplate(
   console.log(chalk.blue(`\nCloning template from ${repoUrl}...`));
 
   const tempDir = path.join(process.cwd(), `.temp-${Date.now()}`);
+  const templateName = repoUrl.split("/").pop();
+  let configInstructions = null;
+
   try {
     execSync(`git clone ${repoUrl} ${tempDir}`, { stdio: "inherit" });
 
@@ -225,14 +176,40 @@ async function handleGitHubTemplate(
     fs.mkdirSync(projectDir, { recursive: true });
     fs.copySync(tempDir, projectDir);
 
+    // Check if the template has a config-instructions.json file
+    const templateConfigPath = path.join(tempDir, "config-instructions.json");
+    if (fs.existsSync(templateConfigPath)) {
+      try {
+        configInstructions = JSON.parse(
+          fs.readFileSync(templateConfigPath, "utf8")
+        );
+      } catch (error) {
+        console.error(
+          chalk.yellow(
+            `\nWarning: Failed to read template configuration instructions: ${error.message}`
+          )
+        );
+      }
+    }
+
     // Clean up temp directory
     fs.removeSync(tempDir);
 
-    // Copy assets directory if it exists
+    // Copy prompts directory if it exists
     copyPromptsIfExist(projectDir);
 
     // Update project metadata
-    updateProjectMetadata(projectDir, { projectName, description, authorName });
+    updateProjectMetadata(projectDir, {
+      projectName,
+      description,
+      authorName,
+    });
+
+    return {
+      templateName,
+      transportType: determineTransportType(configInstructions, templateName),
+      configInstructions,
+    };
   } catch (error) {
     console.error(chalk.red(`Failed to clone repository: ${error.message}`));
     throw error;
@@ -248,6 +225,8 @@ async function handleCustomTemplate(
   { projectName, description, authorName }
 ) {
   const templateDir = path.resolve(process.cwd(), templatePath);
+  const templateName = path.basename(templatePath);
+  let configInstructions = null;
 
   if (!fs.existsSync(templateDir)) {
     throw new Error(`Template directory "${templatePath}" does not exist.`);
@@ -257,11 +236,33 @@ async function handleCustomTemplate(
   fs.mkdirSync(projectDir, { recursive: true });
   fs.copySync(templateDir, projectDir);
 
-  // Copy assets directory if it exists
+  // Copy prompts directory if it exists
   copyPromptsIfExist(projectDir);
 
   // Update project metadata
   updateProjectMetadata(projectDir, { projectName, description, authorName });
+
+  // Check if the template has a config-instructions.json file
+  const templateConfigPath = path.join(templateDir, "config-instructions.json");
+  if (fs.existsSync(templateConfigPath)) {
+    try {
+      configInstructions = JSON.parse(
+        fs.readFileSync(templateConfigPath, "utf8")
+      );
+    } catch (error) {
+      console.error(
+        chalk.yellow(
+          `\nWarning: Failed to read template configuration instructions: ${error.message}`
+        )
+      );
+    }
+  }
+
+  return {
+    templateName,
+    transportType: determineTransportType(configInstructions, templateName),
+    configInstructions,
+  };
 }
 
 /**
@@ -320,7 +321,7 @@ async function customizeTemplate(
   // First update basic metadata
   updateProjectMetadata(projectDir, { projectName, description, authorName });
 
-  // Copy assets directory if it exists
+  // Copy prompts directory if it exists
   copyPromptsIfExist(projectDir);
 
   // Then ask for customization options
@@ -348,9 +349,9 @@ async function customizeTemplate(
     if (useEslint) {
       pkgJson.devDependencies = {
         ...pkgJson.devDependencies,
-        eslint: "^8.56.0",
-        "@typescript-eslint/eslint-plugin": "^7.2.0",
-        "@typescript-eslint/parser": "^7.2.0",
+        eslint: "^9.0.0",
+        "@typescript-eslint/eslint-plugin": "^8.31.1",
+        "@typescript-eslint/parser": "^8.31.1",
       };
 
       // Add lint scripts
@@ -360,7 +361,7 @@ async function customizeTemplate(
         "lint:fix": "eslint 'src/**/*.ts' --fix",
       };
 
-      // Create .eslintrc.json
+      // Create .eslintrc.json with modern configuration
       const eslintConfig = {
         parser: "@typescript-eslint/parser",
         extends: [
@@ -368,7 +369,7 @@ async function customizeTemplate(
           "plugin:@typescript-eslint/recommended",
         ],
         parserOptions: {
-          ecmaVersion: 2020,
+          ecmaVersion: 2022,
           sourceType: "module",
         },
         rules: {},
@@ -433,19 +434,209 @@ async function customizeTemplate(
   }
 }
 
-/**
- * Create HTTP server template file
- */
-function createHttpServerTemplate(projectDir) {
-  console.log(chalk.blue("\nHTTP transport already included in template."));
-}
-
 // Replace the copyAssetsIfExist function with a new copyPromptsIfExist function
 function copyPromptsIfExist(projectDir) {
   const promptsDir = path.resolve(__dirname, "..", "prompts");
   if (fs.existsSync(promptsDir)) {
     console.log(chalk.blue("\nCopying prompts directory..."));
     fs.copySync(promptsDir, path.join(projectDir, "prompts"));
+  }
+}
+
+/**
+ * Handle built-in template with optional customization
+ */
+async function handleBuiltInTemplate(
+  templateName,
+  projectDir,
+  { projectName, description, authorName, options }
+) {
+  const templateDir = path.resolve(__dirname, "..", "templates", templateName);
+  let configInstructions = null;
+
+  if (!fs.existsSync(templateDir)) {
+    console.error(
+      chalk.red(`Built-in template "${templateName}" does not exist.`)
+    );
+    process.exit(1);
+  }
+
+  // Copy template files to project directory
+  fs.copySync(templateDir, projectDir);
+
+  // Copy prompts directory if it exists
+  copyPromptsIfExist(projectDir);
+
+  // Customize template if requested
+  if (options.customize) {
+    await customizeTemplate(projectDir, {
+      projectName,
+      description,
+      authorName,
+    });
+  } else {
+    // Just update basic metadata without customizing
+    updateProjectMetadata(projectDir, {
+      projectName,
+      description,
+      authorName,
+    });
+  }
+
+  // Check if the template has a config-instructions.json file
+  const templateConfigPath = path.join(templateDir, "config-instructions.json");
+  if (fs.existsSync(templateConfigPath)) {
+    try {
+      configInstructions = JSON.parse(
+        fs.readFileSync(templateConfigPath, "utf8")
+      );
+    } catch (error) {
+      console.error(
+        chalk.yellow(
+          `\nWarning: Failed to read template configuration instructions: ${error.message}`
+        )
+      );
+    }
+  }
+
+  return {
+    templateName,
+    transportType: determineTransportType(configInstructions, templateName),
+    configInstructions,
+  };
+}
+
+/**
+ * Print configuration instructions based on template type and custom instructions
+ */
+function printConfigInstructions(projectName, projectDir, templateResult) {
+  const { templateName, transportType, configInstructions } = templateResult;
+
+  console.log(chalk.blue("\nConfiguration Instructions:"));
+
+  // If the template provides custom configuration instructions, use those
+  if (configInstructions) {
+    // Replace template variables in the instructions
+    const processedInstructions = JSON.stringify(configInstructions)
+      .replace(/\$\{projectName\}/g, projectName)
+      .replace(/\$\{projectDir\}/g, projectDir);
+
+    const instructions = JSON.parse(processedInstructions);
+
+    // Skip the transportType key when printing instructions
+    Object.entries(instructions)
+      .filter(([key]) => key !== "transportType")
+      .forEach(([platform, config], index) => {
+        console.log(chalk.yellow(`\n${index + 1}. For ${platform}:`));
+
+        // Print configPath if available
+        if (config.configPath) {
+          console.log(`   Edit config: ${config.configPath}`);
+        }
+
+        // Print instruction text if available
+        if (config.instructions) {
+          console.log(`   ${config.instructions}`);
+        }
+
+        // Print configuration snippet if available
+        if (config.snippet) {
+          console.log(`   ${config.snippet}`);
+        }
+      });
+    return;
+  }
+
+  // Otherwise, use built-in instructions based on transport type
+  if (transportType === "http") {
+    // HTTP-specific configuration instructions
+    console.log(chalk.yellow("\n1. For Claude Desktop:"));
+    console.log(
+      `   Edit config: $HOME/Library/Application\\ Support/Claude/claude_desktop_config.json`
+    );
+    console.log("   Add to mcpServers:");
+    console.log(`   {
+  "mcpServers": {
+    "${projectName}": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}`);
+
+    console.log(chalk.yellow("\n2. For VS Code:"));
+    console.log(
+      `   Edit config: $HOME/Library/Application\\ Support/Code/User/settings.json`
+    );
+    console.log("   Add to settings:");
+    console.log(`   "mcp": {
+  "servers": {
+    "${projectName}": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}`);
+
+    console.log(chalk.yellow("\n3. For Cursor IDE:"));
+    console.log(`   Edit config: $HOME/.cursor/mcp.json`);
+    console.log("   Add to mcpServers (same format as Claude Desktop):");
+    console.log(`   {
+  "mcpServers": {
+    "${projectName}": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}`);
+  } else {
+    // Default stdio configuration instructions
+    console.log(chalk.yellow("\n1. For Claude Desktop:"));
+    console.log(
+      `   Edit config: $HOME/Library/Application\\ Support/Claude/claude_desktop_config.json`
+    );
+    console.log("   Add to mcpServers:");
+    console.log(`   {
+  "mcpServers": {
+    "${projectName}": {
+      "command": "node",
+      "args": [
+        "${path.resolve(projectDir, "dist/index.js")}"
+      ]
+    }
+  }
+}`);
+
+    console.log(chalk.yellow("\n2. For VS Code:"));
+    console.log(
+      `   Edit config: $HOME/Library/Application\\ Support/Code/User/settings.json`
+    );
+    console.log("   Add to settings:");
+    console.log(`   "mcp": {
+  "servers": {
+    "${projectName}": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${path.resolve(projectDir, "dist/index.js")}"
+      ]
+    }
+  }
+}`);
+
+    console.log(chalk.yellow("\n3. For Cursor IDE:"));
+    console.log(`   Edit config: $HOME/.cursor/mcp.json`);
+    console.log("   Add to mcpServers (same format as Claude Desktop):");
+    console.log(`   {
+  "mcpServers": {
+    "${projectName}": {
+      "command": "node",
+      "args": [
+        "${path.resolve(projectDir, "dist/index.js")}"
+      ]
+    }
+  }
+}`);
   }
 }
 

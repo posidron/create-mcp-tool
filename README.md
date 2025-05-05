@@ -93,6 +93,34 @@ You can use any directory or GitHub repository as a template. The tool will:
 4. Optionally customize with additional features
 5. Include prompts directory for LLM interaction
 
+### Template-Specific Configuration Instructions
+
+Templates can provide their own configuration instructions by including a `config-instructions.json` file at the root of the template. This file allows templates to define exactly how they should be configured in different environments.
+
+Example `config-instructions.json`:
+
+```json
+{
+  "transportType": "http",
+  "Claude Desktop": {
+    "configPath": "$HOME/Library/Application\\ Support/Claude/claude_desktop_config.json",
+    "instructions": "Add to mcpServers:",
+    "snippet": "{\n  \"mcpServers\": {\n    \"${projectName}\": {\n      \"type\": \"sse\",\n      \"url\": \"http://localhost:3000/mcp\"\n    }\n  }\n}"
+  },
+  "VS Code": {
+    "configPath": "$HOME/Library/Application\\ Support/Code/User/settings.json",
+    "instructions": "Add to settings:",
+    "snippet": "\"mcp\": {\n  \"servers\": {\n    \"${projectName}\": {\n      \"type\": \"sse\",\n      \"url\": \"http://localhost:3000/mcp\"\n    }\n  }\n}"
+  }
+}
+```
+
+The format supports:
+- `transportType`: Specify "http" or "stdio" to indicate which transport mechanism the template uses
+- Multiple environments (Claude Desktop, VS Code, etc.)
+- Template variables: `${projectName}` and `${projectDir}` are automatically replaced
+- Custom instructions and configuration snippets
+
 ## Transport Options
 
 The MCP specification defines different transport mechanisms, which are implemented in our built-in templates:

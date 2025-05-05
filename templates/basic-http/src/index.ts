@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import cors from "cors";
 import { randomUUID } from "crypto";
 import express from "express";
@@ -76,18 +77,18 @@ const mcpServer = new MinimalMcpServer();
 const httpServer = createServer(app);
 
 // Map to store transports by session ID
-const transports: Record<string, any> = {};
+const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 
 // Handle POST requests for client-to-server communication
 app.post("/mcp", async (req, res) => {
   // Check for existing session ID
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
-  let transport;
+  let transport: StreamableHTTPServerTransport;
 
   if (sessionId && transports[sessionId]) {
     // Reuse existing transport
     transport = transports[sessionId];
-  } else if (!sessionId) {
+  } else if (!sessionId && isInitializeRequest(req.body)) {
     // New initialization request
     transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),

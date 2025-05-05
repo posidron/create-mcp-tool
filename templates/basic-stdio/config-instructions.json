@@ -1,0 +1,18 @@
+{
+  "transportType": "stdio",
+  "Claude Desktop": {
+    "configPath": "$HOME/Library/Application\\ Support/Claude/claude_desktop_config.json",
+    "instructions": "Add to mcpServers:",
+    "snippet": "{\n  \"mcpServers\": {\n    \"${projectName}\": {\n      \"command\": \"node\",\n      \"args\": [\n        \"${projectDir}/dist/index.js\"\n      ]\n    }\n  }\n}"
+  },
+  "VS Code": {
+    "configPath": "$HOME/Library/Application\\ Support/Code/User/settings.json",
+    "instructions": "Add to settings:",
+    "snippet": "\"mcp\": {\n  \"servers\": {\n    \"${projectName}\": {\n      \"type\": \"stdio\",\n      \"command\": \"node\",\n      \"args\": [\n        \"${projectDir}/dist/index.js\"\n      ]\n    }\n  }\n}"
+  },
+  "Cursor IDE": {
+    "configPath": "$HOME/.cursor/mcp.json",
+    "instructions": "Add to mcpServers:",
+    "snippet": "{\n  \"mcpServers\": {\n    \"${projectName}\": {\n      \"command\": \"node\",\n      \"args\": [\n        \"${projectDir}/dist/index.js\"\n      ]\n    }\n  }\n}"
+  }
+}
