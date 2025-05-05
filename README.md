@@ -24,7 +24,7 @@ This tool creates a customizable scaffold for building MCP servers with optional
 npm install -g @mantiqo/create-mcp
 
 # Or use npx to run without installing
-npx @mantiqo/create-mcp my-mcp-project
+npx @mantiqo/create-mcp@latest my-mcp-project
 ```
 
 ## Usage
