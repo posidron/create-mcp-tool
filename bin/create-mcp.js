@@ -146,39 +146,58 @@ program
       }
       console.log("  npm run build");
       console.log("  npm start");
-      console.log("\nThen configure in your Claude Desktop config:");
+
+      console.log(chalk.blue("\nConfiguration Instructions:"));
+
+      // Claude Desktop
+      console.log(chalk.yellow("\n1. For Claude Desktop:"));
       console.log(
-        `  $HOME/Library/Application\\ Support/Claude/claude_desktop_config.json`
+        `   Edit config: $HOME/Library/Application\\ Support/Claude/claude_desktop_config.json`
       );
-      console.log("\nOr for VS Code:");
+      console.log("   Add to mcpServers:");
+      console.log(`   {
+     "mcpServers": {
+       "${projectName}": {
+         "command": "node",
+         "args": [
+           "${path.resolve(projectDir, "dist/index.js")}"
+         ]
+       }
+     }
+   }`);
+
+      // VS Code
+      console.log(chalk.yellow("\n2. For VS Code:"));
       console.log(
-        `  $HOME/Library/Application\\ Support/Code/User/settings.json`
+        `   Edit config: $HOME/Library/Application\\ Support/Code/User/settings.json`
       );
-      console.log('  In the "mcp.servers" section:');
-      console.log(`  "mcp": {
-    "servers": {
-      "${projectName}": {
-        "type": "stdio",
-        "command": "node",
-        "args": [
-          "${path.resolve(projectDir, "dist/index.js")}"
-        ]
-      }
-    }
-  }`);
-      console.log("\nOr for Cursor IDE:");
-      console.log(`  $HOME/.cursor/mcp.json`);
-      console.log("\nFor Claude Desktop and Cursor, add to mcpServers:");
-      console.log(`{
-  "mcpServers": {
-    "${projectName}": {
-      "command": "node",
-      "args": [
-        "${path.resolve(projectDir, "dist/index.js")}"
-      ]
-    }
-  }
-}`);
+      console.log("   Add to settings:");
+      console.log(`   "mcp": {
+     "servers": {
+       "${projectName}": {
+         "type": "stdio",
+         "command": "node",
+         "args": [
+           "${path.resolve(projectDir, "dist/index.js")}"
+         ]
+       }
+     }
+   }`);
+
+      // Cursor
+      console.log(chalk.yellow("\n3. For Cursor IDE:"));
+      console.log(`   Edit config: $HOME/.cursor/mcp.json`);
+      console.log("   Add to mcpServers (same format as Claude Desktop):");
+      console.log(`   {
+     "mcpServers": {
+       "${projectName}": {
+         "command": "node",
+         "args": [
+           "${path.resolve(projectDir, "dist/index.js")}"
+         ]
+       }
+     }
+   }`);
     } catch (error) {
       console.error(chalk.red(`\nError creating project: ${error.message}`));
       process.exit(1);

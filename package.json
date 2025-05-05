@@ -1,6 +1,6 @@
 {
   "name": "@mantiqo/create-mcp",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Bootstrap tool for creating Model Context Protocol (MCP) servers",
   "type": "module",
   "main": "bin/create-mcp.js",
@@ -26,11 +26,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mantiqo/create-mcp.git"
+    "url": "git+https://github.com/posidron/create-mcp.git"
   },
-  "homepage": "https://github.com/mantiqo/create-mcp#readme",
+  "homepage": "https://github.com/posidron/create-mcp#readme",
   "bugs": {
-    "url": "https://github.com/mantiqo/create-mcp/issues"
+    "url": "https://github.com/posidron/create-mcp/issues"
   },
   "engines": {
     "node": ">=16.0.0"
