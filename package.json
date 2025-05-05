@@ -1,6 +1,6 @@
 {
   "name": "@mantiqo/create-mcp",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "Bootstrap tool for creating Model Context Protocol (MCP) servers",
   "type": "module",
   "main": "bin/create-mcp.js",
