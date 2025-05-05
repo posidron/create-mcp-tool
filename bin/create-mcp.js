@@ -172,9 +172,11 @@ async function handleGitHubTemplate(
     // Remove .git directory to start fresh
     fs.removeSync(path.join(tempDir, ".git"));
 
-    // Copy template contents to project directory
+    // Copy template contents to project directory, excluding config-instructions.json
     fs.mkdirSync(projectDir, { recursive: true });
-    fs.copySync(tempDir, projectDir);
+    fs.copySync(tempDir, projectDir, {
+      filter: (src) => !src.endsWith("config-instructions.json"),
+    });
 
     // Check if the template has a config-instructions.json file
     const templateConfigPath = path.join(tempDir, "config-instructions.json");
@@ -232,9 +234,11 @@ async function handleCustomTemplate(
     throw new Error(`Template directory "${templatePath}" does not exist.`);
   }
 
-  // Copy template files to project directory
+  // Copy template files to project directory, excluding config-instructions.json
   fs.mkdirSync(projectDir, { recursive: true });
-  fs.copySync(templateDir, projectDir);
+  fs.copySync(templateDir, projectDir, {
+    filter: (src) => !src.endsWith("config-instructions.json"),
+  });
 
   // Copy prompts directory if it exists
   copyPromptsIfExist(projectDir);
@@ -461,8 +465,10 @@ async function handleBuiltInTemplate(
     process.exit(1);
   }
 
-  // Copy template files to project directory
-  fs.copySync(templateDir, projectDir);
+  // Copy template files to project directory, excluding config-instructions.json
+  fs.copySync(templateDir, projectDir, {
+    filter: (src) => !src.endsWith("config-instructions.json"),
+  });
 
   // Copy prompts directory if it exists
   copyPromptsIfExist(projectDir);
