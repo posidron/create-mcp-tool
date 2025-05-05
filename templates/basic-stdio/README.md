@@ -20,58 +20,57 @@ A simple, extensible Model Context Protocol server template using stdio transpor
 
 ## Configuration
 
-To use this MCP with Claude Desktop:
+### For Claude Desktop
+Edit config: `$HOME/Library/Application\ Support/Claude/claude_desktop_config.json`
 
-1. Get the absolute path to the transpiled script:
-   ```bash
-   echo "$(pwd)/dist/index.js"
-   ```
+Add to mcpServers:
+```json
+{
+  "mcpServers": {
+    "minimal-mcp-server": {
+      "command": "node",
+      "args": [
+        "/path/to/minimal-mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
+```
 
-2. Edit your Claude Desktop configuration:
-   ```bash
-   vim $HOME/Library/Application\ Support/Claude/claude_desktop_config.json
-   ```
+### For VS Code
+Edit config: `$HOME/Library/Application\ Support/Code/User/settings.json`
 
-   Or for VS Code:
-   ```bash
-   vim $HOME/Library/Application\ Support/Code/User/settings.json
-   ```
+Add to settings:
+```json
+"mcp": {
+  "servers": {
+    "minimal-mcp-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/path/to/minimal-mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
+```
 
-   In VS Code, add to the settings.json:
-   ```json
-   "mcp": {
-     "servers": {
-       "minimal-mcp-server": {
-         "type": "stdio",
-         "command": "node",
-         "args": [
-           "/absolute/path/to/minimal-mcp-server/dist/index.js"
-         ]
-       }
-     }
-   }
-   ```
+### For Cursor IDE
+Edit config: `$HOME/.cursor/mcp.json`
 
-   Or for Cursor IDE:
-   ```bash
-   vim $HOME/.cursor/mcp.json
-   ```
-
-3. For Claude Desktop and Cursor, add an entry to the `mcpServers` section:
-   ```json
-   {
-     "mcpServers": {
-       "minimal-mcp-server": {
-         "command": "node",
-         "args": [
-           "/absolute/path/to/minimal-mcp-server/dist/index.js"
-         ]
-       }
-     }
-   }
-   ```
-
-4. Restart Claude Desktop
+Add to mcpServers:
+```json
+{
+  "mcpServers": {
+    "minimal-mcp-server": {
+      "command": "node",
+      "args": [
+        "/path/to/minimal-mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
+```
 
 ## Available Tools
 

@@ -31,50 +31,52 @@ This will start an HTTP server on port 3000 (or the port specified in the PORT e
 http://localhost:3000/mcp
 ```
 
-## Configuration with Claude Desktop
+## Configuration
 
-You can also use this HTTP-based MCP server with Claude Desktop:
+### For Claude Desktop
+Edit config: `$HOME/Library/Application\ Support/Claude/claude_desktop_config.json`
 
-1. Edit your Claude Desktop configuration:
-   ```bash
-   vim $HOME/Library/Application\ Support/Claude/claude_desktop_config.json
-   ```
+Add to mcpServers:
+```json
+{
+  "mcpServers": {
+    "minimal-mcp-server": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
 
-   Or for VS Code:
-   ```bash
-   vim $HOME/Library/Application\ Support/Code/User/settings.json
-   ```
+### For VS Code
+Edit config: `$HOME/Library/Application\ Support/Code/User/settings.json`
 
-   In VS Code, add to the settings.json:
-   ```json
-   "mcp": {
-     "servers": {
-       "minimal-mcp-server": {
-         "type": "http",
-         "url": "http://localhost:3000/mcp"
-       }
-     }
-   }
-   ```
+Add to settings:
+```json
+"mcp": {
+  "servers": {
+    "minimal-mcp-server": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
 
-   Or for Cursor IDE:
-   ```bash
-   vim $HOME/.cursor/mcp.json
-   ```
+### For Cursor IDE
+Edit config: `$HOME/.cursor/mcp.json`
 
-2. For Claude Desktop and Cursor, add an entry to the `mcpServers` section:
-   ```json
-   {
-     "mcpServers": {
-       "minimal-mcp-server": {
-         "type": "http",
-         "url": "http://localhost:3000/mcp"
-       }
-     }
-   }
-   ```
-
-3. Start your HTTP server and restart Claude Desktop
+Add to mcpServers:
+```json
+{
+  "mcpServers": {
+    "minimal-mcp-server": {
+      "type": "sse",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+```
 
 ## Available Tools
 
