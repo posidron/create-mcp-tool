@@ -1,0 +1,51 @@
+{
+  "name": "@mantiqo/create-mcp",
+  "version": "1.0.3",
+  "description": "Bootstrap tool for creating Model Context Protocol (MCP) servers",
+  "type": "module",
+  "main": "bin/create-mcp.js",
+  "bin": {
+    "create-mcp": "bin/create-mcp.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "chmod +x ./bin/create-mcp.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai",
+    "scaffold",
+    "generator",
+    "template",
+    "typescript",
+    "boilerplate"
+  ],
+  "author": "Mantiqo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mantiqo/create-mcp.git"
+  },
+  "homepage": "https://github.com/mantiqo/create-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/mantiqo/create-mcp/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "bin/",
+    "templates/",
+    "prompts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "fs-extra": "^11.3.0",
+    "inquirer": "^8.2.6"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "mcp-server-stdio",
+  "version": "1.0.0",
+  "description": "Minimal Model Context Protocol server using stdio transport",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "author": "Mantiqo",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.8.3"
+  }
+}
