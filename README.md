@@ -154,12 +154,12 @@ After creating a server with the stdio transport template, you can integrate it 
 
 ```bash
 # Edit Claude Desktop config
-vim $HOME/Library/Application\ Support/Claude/claude_desktop_config.json
+$HOME/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
 Or for VS Code:
 ```bash
-vim $HOME/Library/Application\ Support/Code/User/settings.json
+$HOME/Library/Application\ Support/Code/User/settings.json
 ```
 
 In VS Code, add to the settings.json:
@@ -179,7 +179,7 @@ In VS Code, add to the settings.json:
 
 Or for Cursor IDE:
 ```bash
-vim $HOME/.cursor/mcp.json
+$HOME/.cursor/mcp.json
 ```
 
 For Claude Desktop and Cursor, add an entry to the `mcpServers` section:
