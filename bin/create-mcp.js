@@ -470,9 +470,6 @@ async function handleBuiltInTemplate(
     filter: (src) => !src.endsWith("config-instructions.json"),
   });
 
-  // Copy prompts directory if it exists
-  copyPromptsIfExist(projectDir);
-
   // Customize template if requested
   if (options.customize) {
     await customizeTemplate(projectDir, {
@@ -487,6 +484,9 @@ async function handleBuiltInTemplate(
       description,
       authorName,
     });
+
+    // Copy prompts directory if it exists
+    copyPromptsIfExist(projectDir);
   }
 
   // Check if the template has a config-instructions.json file
@@ -522,38 +522,76 @@ function printConfigInstructions(projectName, projectDir, templateResult) {
 
   // If the template provides custom configuration instructions, use those
   if (configInstructions) {
-    // Replace template variables in the instructions
-    const processedInstructions = JSON.stringify(configInstructions)
-      .replace(/\$\{projectName\}/g, projectName)
-      .replace(/\$\{projectDir\}/g, projectDir);
+    try {
+      // Create a deep copy of configInstructions
+      const instructionsCopy = JSON.parse(JSON.stringify(configInstructions));
 
-    const instructions = JSON.parse(processedInstructions);
+      // Function to replace variables in all string properties recursively
+      const replaceVariables = (obj) => {
+        if (!obj) return;
 
-    // Skip the transportType key when printing instructions
-    Object.entries(instructions)
-      .filter(([key]) => key !== "transportType")
-      .forEach(([platform, config], index) => {
-        console.log(chalk.yellow(`\n${index + 1}. For ${platform}:`));
+        Object.keys(obj).forEach((key) => {
+          if (typeof obj[key] === "string") {
+            // Replace variables in string values
+            obj[key] = obj[key]
+              .replace(/\$\{projectName\}/g, projectName)
+              .replace(/\$\{projectDir\}/g, projectDir.replace(/\\/g, "\\\\"));
+          } else if (typeof obj[key] === "object") {
+            // Recursively process nested objects
+            replaceVariables(obj[key]);
+          }
+        });
+      };
 
-        // Print configPath if available
-        if (config.configPath) {
-          console.log(`   Edit config: ${config.configPath}`);
-        }
+      // Process the instructions copy
+      replaceVariables(instructionsCopy);
 
-        // Print instruction text if available
-        if (config.instructions) {
-          console.log(`   ${config.instructions}`);
-        }
+      // Skip the transportType key when printing instructions
+      Object.entries(instructionsCopy)
+        .filter(([key]) => key !== "transportType")
+        .forEach(([platform, config], index) => {
+          console.log(chalk.yellow(`\n${index + 1}. For ${platform}:`));
 
-        // Print configuration snippet if available
-        if (config.snippet) {
-          console.log(`   ${config.snippet}`);
-        }
-      });
+          // Print configPath if available
+          if (config.configPath) {
+            console.log(`   Edit config: ${config.configPath}`);
+          }
+
+          // Print instruction text if available
+          if (config.instructions) {
+            console.log(`   ${config.instructions}`);
+          }
+
+          // Print configuration snippet if available
+          if (config.snippet) {
+            console.log(`   ${config.snippet}`);
+          }
+        });
+    } catch (error) {
+      console.error(
+        chalk.red(
+          `Error processing configuration instructions: ${error.message}`
+        )
+      );
+      // Fall back to the built-in instructions
+      printBuiltInInstructions(projectName, projectDir, transportType);
+    }
     return;
   }
 
   // Otherwise, use built-in instructions based on transport type
+  printBuiltInInstructions(projectName, projectDir, transportType);
+}
+
+/**
+ * Print built-in configuration instructions based on transport type
+ */
+function printBuiltInInstructions(projectName, projectDir, transportType) {
+  // Ensure Windows paths are correctly escaped for JSON display
+  const indexJsPath = path
+    .resolve(projectDir, "dist/index.js")
+    .replace(/\\/g, "\\\\");
+
   if (transportType === "http") {
     // HTTP-specific configuration instructions
     console.log(chalk.yellow("\n1. For Claude Desktop:"));
@@ -607,7 +645,7 @@ function printConfigInstructions(projectName, projectDir, templateResult) {
     "${projectName}": {
       "command": "node",
       "args": [
-        "${path.resolve(projectDir, "dist/index.js")}"
+        "${indexJsPath}"
       ]
     }
   }
@@ -624,7 +662,7 @@ function printConfigInstructions(projectName, projectDir, templateResult) {
       "type": "stdio",
       "command": "node",
       "args": [
-        "${path.resolve(projectDir, "dist/index.js")}"
+        "${indexJsPath}"
       ]
     }
   }
@@ -638,7 +676,7 @@ function printConfigInstructions(projectName, projectDir, templateResult) {
     "${projectName}": {
       "command": "node",
       "args": [
-        "${path.resolve(projectDir, "dist/index.js")}"
+        "${indexJsPath}"
       ]
     }
   }
